@@ -24,27 +24,25 @@ def convert_to_ascii_art(image, output_width=50):
             ascii_index = int(pixel_value / 25)
             ascii_char = ascii_chars[ascii_index]
             ascii_art += ascii_char
-        ascii_art += '\n'
+        ascii_art += '\r\n'
     #print(ascii_art)
     return ascii_art
 
-def handle_client(client_socket):
+def handle_client(client_socket, clients_list):
     while True:
         try:
             message = client_socket.recv(1024).decode('utf-8')
             if message == 'q':
                 break
-            #elif message.startswith('send_file'):
-            #    # Pobierz nazwę pliku z wiadomości
-            #    filename = message.split()[1]
-
-                # Otwórz plik do zapisu
-           #     with open(f'server_{filename}.txt', 'w') as f:
-                    # Zapisz otrzymany ASCII-art do pliku
-            #        f.write(client_socket.recv(1024).decode('utf-8'))
-            #print(f"Received message from client: {message}")
             else:
                 print(message)
+                for other_client_socket in clients_list:
+                    if other_client_socket != client_socket:
+                        try:
+                            other_client_socket.send(message.encode('utf-8'))
+                        except:
+                            clients_list.remove(other_client_socket)
+                            other_client_socket.close()
         except:
             break
 
@@ -55,19 +53,22 @@ def main():
     server_socket.bind(('localhost', 9999))
     server_socket.listen()
 
-    #print("Server is listening on port 9999...")
+    print("Server is listening on port 9999...")
+    clients_list = []
 
     while True:
         client_socket, addr = server_socket.accept()
         print(f"Accepted connection from {addr[0]}:{addr[1]}")
+        clients_list.append(client_socket)
 
-        receive_thread = threading.Thread(target=handle_client, args=(client_socket,))
+        receive_thread = threading.Thread(target=handle_client, args=(client_socket, clients_list))
         receive_thread.start()
 
-        send_thread = threading.Thread(target=send_message, args=(client_socket,))
+        send_thread = threading.Thread(target=send_message, args=(client_socket, clients_list))
         send_thread.start()
 
-def send_message(client_socket):
+
+def send_message(client_socket, clients):
     while True:
         message = input()
 
@@ -83,15 +84,18 @@ def send_message(client_socket):
             # Konwertuj obraz na ASCII-art
             ascii_art = convert_to_ascii_art(img)
 
-            # Prześlij ASCII-art do serwera
-            #print(ascii_art)
+            # Prześlij ASCII-art do wszystkich klientów
             for line in ascii_art.split('\n'):
                 if line:
-                    client_socket.send(line.encode('utf-8'))
-                    time.sleep(0.02)  # opóźnienie dla lepszej czytelności
-                    # server_socket.send('\n'.encode('utf-8'))
+                    for c in clients:
+                        #if c != client_socket:
+                            c.send(line.encode('utf-8'))
+                            time.sleep(0.02)  # opóźnienie dla lepszej czytelności
         else:
-            client_socket.send(message.encode('utf-8'))
+            # Prześlij wiadomość do wszystkich klientów (oprócz tego, który ją wysłał)
+            for c in clients:
+                #if c != client_socket:
+                    c.send(message.encode('utf-8'))
 
     client_socket.close()
 
