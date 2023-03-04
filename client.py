@@ -4,6 +4,7 @@ import threading
 import select
 import sys
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QLineEdit, QPushButton, QFileDialog
+from PySide2.QtGui import QFont
 from PIL import Image
 import time
 
@@ -19,7 +20,6 @@ def convert_to_ascii_art(image, output_width=50):
     output_height = int(height / width * output_width)
     image = image.resize((output_width, output_height))
 
-    # Podziel obraz na bloki pikseli i zamień każdy blok na odpowiadający mu znak ASCII
     ascii_art = ''
     for i in range(0, output_height, 1):
         for j in range(0, output_width, 1):
@@ -129,14 +129,15 @@ class ChatWindow(QMainWindow):
                         self.server_socket.send(line.encode('utf-8'))
                         time.sleep(0.02)  # opóźnienie dla lepszej czytelności
             except:
-                print("aaa")
+                pass
 
         # Wyczyść pole tekstowe
         self.message_input.clear()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
+    font = QFont('consolas', 10)  # ustawienie fontu 'monospace' z rozmiarem 10
+    app.setFont(font)
     main_window = ChatWindow()
     main_window.show()
 
