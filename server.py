@@ -5,10 +5,9 @@ from PIL import Image
 import time
 
 def convert_to_ascii_art(image, output_width=50):
-    # Skonwertuj obraz na skalę szarości
+
     image = image.convert('L')
 
-    # Zdefiniuj listę znaków ASCII, które będą reprezentować różne poziomy jasności
     ascii_chars = ["@", "#", "S", "%", "?", "*", "+", ";", ":", ",", "."]
 
     # Oblicz wysokość obrazu na podstawie proporcji
@@ -16,7 +15,6 @@ def convert_to_ascii_art(image, output_width=50):
     output_height = int(height / width * output_width)
     image = image.resize((output_width, output_height))
 
-    # Podziel obraz na bloki pikseli i zamień każdy blok na odpowiadający mu znak ASCII
     ascii_art = ''
     for i in range(0, output_height, 1):
         for j in range(0, output_width, 1):
@@ -32,14 +30,13 @@ def handle_client(client_socket, clients_list):
     while True:
         try:
             data = client_socket.recv(1024)
+
             if not data:
                 break
             elif data.startswith(b'SIZE'):
-                # Odczytaj rozmiar pliku z przesłanego komunikatu
                 filesize = int(data[5:])
                 filename = f"received_{int(time.time())}.docx"
                 with open(filename, 'wb') as f:
-                    # Odbieraj dane pliku i zapisuj je do pliku docx
                     data = client_socket.recv(1024)
                     total_recv = len(data)
                     f.write(data)
@@ -47,8 +44,16 @@ def handle_client(client_socket, clients_list):
                         data = client_socket.recv(1024)
                         total_recv += len(data)
                         f.write(data)
-
-                print(f'File {filename} received')
+                statement = f'File {filename} received'
+                print(statement)
+                for other_client_socket in clients_list:
+                    if other_client_socket != client_socket:
+                        try:
+                            #other_client_socket.send(data)
+                            other_client_socket.send(statement.encode('utf-8'))
+                        except:
+                            clients_list.remove(other_client_socket)
+                            other_client_socket.close()
 
             else:
                 message = data.decode('utf-8')
@@ -68,6 +73,7 @@ def handle_client(client_socket, clients_list):
             break
 
     client_socket.close()
+
 
 
 def main():
@@ -97,16 +103,12 @@ def send_message(client_socket, clients):
         if message == 'q':
             break
         elif message.startswith('send_file'):
-            # Pobierz nazwę pliku z wiadomości
             filename = message.split()[1]
 
-            # Wczytaj plik graficzny
             img = Image.open(filename)
 
-            # Konwertuj obraz na ASCII-art
             ascii_art = convert_to_ascii_art(img)
 
-            # Prześlij ASCII-art do wszystkich klientów
             #print(ascii_art.strip().split('\r\n'))
             for line in ascii_art.strip().split('\n'):
                 if line:
@@ -115,7 +117,7 @@ def send_message(client_socket, clients):
                             c.send(line.encode('utf-8'))
                             time.sleep(0.02)  # opóźnienie dla lepszej czytelności
         else:
-            # Prześlij wiadomość do wszystkich klientów (oprócz tego, który ją wysłał)
+
             for c in clients:
                 #if c != client_socket:
                     c.send(message.encode('utf-8'))
