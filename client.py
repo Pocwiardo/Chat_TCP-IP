@@ -1,3 +1,4 @@
+
 import socket
 import threading
 import select
@@ -7,6 +8,7 @@ from PySide2.QtGui import QFont
 from PySide2.QtCore import Qt
 from PIL import Image
 import time
+import os
 
 def convert_to_ascii_art(image, output_width=50):
     # Skonwertuj obraz na skalę szarości
@@ -47,7 +49,8 @@ class ChatWindow(QMainWindow):
         self.message_input = QLineEdit()
         self.message_history.setReadOnly(True)
         self.send_button = QPushButton('Send')
-        self.send_file_button = QPushButton('Send File')
+        self.send_file_button = QPushButton('Send Image')
+        self.send_docx_button = QPushButton('Send docx')
 
         # Stwórz layout
         vbox = QVBoxLayout()
@@ -57,6 +60,7 @@ class ChatWindow(QMainWindow):
         hbox.addWidget(self.message_input)
         hbox.addWidget(self.send_button)
         hbox.addWidget(self.send_file_button)
+        hbox.addWidget(self.send_docx_button)
 
         vbox.addLayout(hbox)
 
@@ -68,6 +72,7 @@ class ChatWindow(QMainWindow):
         # Połącz sygnały z slotami
         self.send_button.clicked.connect(self.send_message)
         self.send_file_button.clicked.connect(self.send_file)
+        self.send_docx_button.clicked.connect(self.send_docx)
 
         # Utwórz gniazdo sieciowe
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -136,6 +141,32 @@ class ChatWindow(QMainWindow):
 
         # Wyczyść pole tekstowe
         self.message_input.clear()
+
+    def send_docx(self):
+        # Pobierz nazwę pliku z pola tekstowego
+        filename, _ = QFileDialog.getOpenFileName(self, 'Przeglądaj', '/', "Pliki Word (*.docx)")
+        if filename:
+            try:
+                # Wyślij informację o rozmiarze pliku
+                filesize = os.path.getsize(filename)
+                self.server_socket.send(f"SIZE {filesize}".encode('utf-8'))
+                time.sleep(0.1)
+
+                # Otwórz plik i przesyłaj go do serwera
+                with open(filename, 'rb') as f:
+                    data = f.read(1024)
+                    while data:
+                        self.server_socket.send(data)
+                        data = f.read(1024)
+                        time.sleep(0.02)  # opóźnienie dla lepszej czytelności
+
+                print(f'File {filename} sent')
+            except Exception as e:
+                print(f"Error: {str(e)}")
+
+        # Wyczyść pole tekstowe
+        self.message_input.clear()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
