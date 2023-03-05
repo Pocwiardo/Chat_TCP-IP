@@ -31,22 +31,44 @@ def convert_to_ascii_art(image, output_width=50):
 def handle_client(client_socket, clients_list):
     while True:
         try:
-            message = client_socket.recv(1024).decode('utf-8')
-            if message == 'q':
+            data = client_socket.recv(1024)
+            if not data:
                 break
+            elif data.startswith(b'SIZE'):
+                # Odczytaj rozmiar pliku z przesłanego komunikatu
+                filesize = int(data[5:])
+                filename = f"received_{int(time.time())}.docx"
+                with open(filename, 'wb') as f:
+                    # Odbieraj dane pliku i zapisuj je do pliku docx
+                    data = client_socket.recv(1024)
+                    total_recv = len(data)
+                    f.write(data)
+                    while total_recv < filesize:
+                        data = client_socket.recv(1024)
+                        total_recv += len(data)
+                        f.write(data)
+
+                print(f'File {filename} received')
+
             else:
-                print(message)
-                for other_client_socket in clients_list:
-                    if other_client_socket != client_socket:
-                        try:
-                            other_client_socket.send(message.encode('utf-8'))
-                        except:
-                            clients_list.remove(other_client_socket)
-                            other_client_socket.close()
-        except:
+                message = data.decode('utf-8')
+                if message == 'q':
+                    break
+                else:
+                    print(message)
+                    for other_client_socket in clients_list:
+                        if other_client_socket != client_socket:
+                            try:
+                                other_client_socket.send(data)
+                            except:
+                                clients_list.remove(other_client_socket)
+                                other_client_socket.close()
+        except Exception as e:
+            print(f"Error: {str(e)}")
             break
 
     client_socket.close()
+
 
 def main():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -102,4 +124,3 @@ def send_message(client_socket, clients):
 
 if __name__ == '__main__':
     main()
-    
