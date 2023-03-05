@@ -85,7 +85,8 @@ def send_message(client_socket, clients):
             ascii_art = convert_to_ascii_art(img)
 
             # Prześlij ASCII-art do wszystkich klientów
-            for line in ascii_art.split('\n'):
+            #print(ascii_art.strip().split('\r\n'))
+            for line in ascii_art.strip().split('\n'):
                 if line:
                     for c in clients:
                         #if c != client_socket:
