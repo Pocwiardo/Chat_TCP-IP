@@ -28,7 +28,7 @@ def convert_to_ascii_art(image, output_width=50):
             ascii_index = int(pixel_value / 25)
             ascii_char = ascii_chars[ascii_index]
             ascii_art += ascii_char
-        ascii_art += '\n'
+        ascii_art += '\r\n'
     #print(ascii_art)
     return ascii_art
 
@@ -46,6 +46,7 @@ class ChatWindow(QMainWindow):
         # Utwórz widgety
         self.message_history = QTextEdit()
         self.message_input = QLineEdit()
+        self.message_history.setReadOnly(True)
         self.send_button = QPushButton('Send')
         self.send_file_button = QPushButton('Send File')
 
@@ -89,7 +90,7 @@ class ChatWindow(QMainWindow):
 
                     # Dodaj otrzymaną wiadomość do historii wiadomości
                     #self.message_history.setAlignment(Qt.AlignLeft)
-                    self.message_history.append(message)
+                    self.message_history.append(message.replace("\r", ""))
             except:
                 break
 
@@ -127,7 +128,7 @@ class ChatWindow(QMainWindow):
                 ascii_art = convert_to_ascii_art(img)
 
                 # Prześlij ASCII-art do serwera
-                for line in ascii_art.split('\n'):
+                for line in ascii_art.strip().split('\n'):
                     if line:
                         self.server_socket.send(line.encode('utf-8'))
                         time.sleep(0.02)  # opóźnienie dla lepszej czytelności
@@ -139,7 +140,7 @@ class ChatWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    font = QFont('consolas', 10)  # ustawienie fontu 'monospace' z rozmiarem 10
+    font = QFont('consolas', 10)
     app.setFont(font)
     main_window = ChatWindow()
     main_window.show()
