@@ -5,6 +5,7 @@ import select
 import sys
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QLineEdit, QPushButton, QFileDialog
 from PySide2.QtGui import QFont
+from PySide2.QtCore import Qt
 from PIL import Image
 import time
 
@@ -27,7 +28,7 @@ def convert_to_ascii_art(image, output_width=50):
             ascii_index = int(pixel_value / 25)
             ascii_char = ascii_chars[ascii_index]
             ascii_art += ascii_char
-        ascii_art += '\n'
+        ascii_art += '\r\n'
     #print(ascii_art)
     return ascii_art
 
@@ -40,10 +41,11 @@ class ChatWindow(QMainWindow):
 
         # Utwórz okno
         self.setWindowTitle('Chat')
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1000, 600)
 
         # Utwórz widgety
         self.message_history = QTextEdit()
+        self.message_history.setReadOnly(True)
         self.message_input = QLineEdit()
         self.send_button = QPushButton('Send')
         self.send_file_button = QPushButton('Send File')
@@ -82,17 +84,20 @@ class ChatWindow(QMainWindow):
                 # Użyj funkcji select, aby oczekiwać na dane do odczytu z serwera
                 ready_to_read, _, _ = select.select([self.server_socket], [], [], 0.1)
                 if self.server_socket in ready_to_read:
-                    message = self.server_socket.recv(1024).decode('utf-8')
+                    message = self.server_socket.recv(4096).decode('utf-8')
                     if message == 'q':
                         break
 
                     # Dodaj otrzymaną wiadomość do historii wiadomości
-                    self.message_history.append(message)
+                    else:
+                        self.message_history.append(message)
+                        self.message_history.setAlignment(Qt.AlignLeft)
             except:
                 break
-
+                #pass
+        print("Wylazlem")
         self.server_socket.close()
-        sys.exit()
+        #sys.exit()
 
     def send_message(self):
         # Pobierz treść wiadomości z pola tekstowego
@@ -107,6 +112,8 @@ class ChatWindow(QMainWindow):
             # Wyślij wiadomość do serwera
             self.server_socket.send(message.encode('utf-8'))
 
+            self.message_history.append(message)
+            self.message_history.setAlignment(Qt.AlignRight)
         # Wyczyść pole tekstowe
         self.message_input.clear()
 
@@ -122,10 +129,15 @@ class ChatWindow(QMainWindow):
 
                 # Konwertuj obraz na ASCII-art
                 ascii_art = convert_to_ascii_art(img)
+                #self.message_history.setAlignment(Qt.AlignRight)
+                #self.message_history.append(ascii_art)
 
                 # Prześlij ASCII-art do serwera
-                for line in ascii_art.split('\n'):
+                for line in ascii_art.split('\r\n'):
                     if line:
+
+                        self.message_history.append(line)
+                        self.message_history.setAlignment(Qt.AlignRight)
                         self.server_socket.send(line.encode('utf-8'))
                         time.sleep(0.02)  # opóźnienie dla lepszej czytelności
             except:
@@ -136,7 +148,7 @@ class ChatWindow(QMainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    font = QFont('consolas', 10)  # ustawienie fontu 'monospace' z rozmiarem 10
+    font = QFont('consolas', 10)
     app.setFont(font)
     main_window = ChatWindow()
     main_window.show()
