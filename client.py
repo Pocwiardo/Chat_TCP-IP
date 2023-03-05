@@ -5,6 +5,7 @@ import select
 import sys
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QTextEdit, QLineEdit, QPushButton, QFileDialog
 from PySide2.QtGui import QFont
+from PySide2.QtCore import Qt
 from PIL import Image
 import time
 
@@ -87,6 +88,7 @@ class ChatWindow(QMainWindow):
                         break
 
                     # Dodaj otrzymaną wiadomość do historii wiadomości
+                    #self.message_history.setAlignment(Qt.AlignLeft)
                     self.message_history.append(message)
             except:
                 break
@@ -106,7 +108,8 @@ class ChatWindow(QMainWindow):
         elif message:
             # Wyślij wiadomość do serwera
             self.server_socket.send(message.encode('utf-8'))
-
+            #self.message_history.setAlignment(Qt.AlignRight)
+            #self.message_history.append(message)
         # Wyczyść pole tekstowe
         self.message_input.clear()
 
