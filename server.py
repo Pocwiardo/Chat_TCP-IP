@@ -31,7 +31,7 @@ def convert_to_ascii_art(image, output_width=50):
 def handle_client(client_socket, clients_list):
     while True:
         try:
-            message = client_socket.recv(1024).decode('utf-8')
+            message = client_socket.recv(4096).decode('utf-8')
             if message == 'q':
                 break
             else:
@@ -85,14 +85,13 @@ def send_message(client_socket, clients):
             ascii_art = convert_to_ascii_art(img)
 
             # Prześlij ASCII-art do wszystkich klientów
-            for line in ascii_art.split('\n'):
+            for line in ascii_art.split('\r\n'):
                 if line:
                     for c in clients:
                         #if c != client_socket:
                             c.send(line.encode('utf-8'))
                             time.sleep(0.02)  # opóźnienie dla lepszej czytelności
         else:
-            # Prześlij wiadomość do wszystkich klientów (oprócz tego, który ją wysłał)
             for c in clients:
                 #if c != client_socket:
                     c.send(message.encode('utf-8'))
