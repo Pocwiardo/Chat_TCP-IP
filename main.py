@@ -49,7 +49,6 @@ class MainWindow(QWidget):
             client_process = subprocess.Popen(['python', 'client.py'])
             self.client_processes.append(client_process)
 
-        # Zarejestrowanie funkcji, która zostanie wywołana przy zakończeniu działania programu
         atexit.register(self.close_processes)
 
     def close_processes(self):
